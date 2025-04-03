@@ -10,13 +10,13 @@ import android.util.Log
 @Suppress("ControlFlowWithEmptyBody")
 class TimerService : Service() {
 
-    private var isRunning = false
+    var isRunning = false
 
     private var timerHandler : Handler? = null
 
     lateinit var t: TimerThread
 
-    private var paused = false
+    var paused = false
 
     inner class TimerBinder : Binder() {
 
