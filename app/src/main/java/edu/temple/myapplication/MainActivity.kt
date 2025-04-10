@@ -9,10 +9,14 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.Message
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Button
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
+    var mainMenu: Menu? = null
 
     private var timerService: TimerService.TimerBinder? = null
     private var isBound = false
@@ -23,7 +27,7 @@ class MainActivity : AppCompatActivity() {
 
 
     private val timerHandler = Handler(Looper.getMainLooper()) { msg ->
-        timerTextView.text = "Countdown: ${msg.what}"
+        timerTextView.text = "${msg.what}"
         true
     }
 
@@ -73,6 +77,45 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.main, menu)
+        mainMenu = menu
+        return true
+    }
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.action_start -> {
+                if (isBound) {
+                    if (timerService?.isRunning == true) {
+                        timerService?.pause()
+                        mainMenu?.findItem(R.id.action_start)?.title = "Resume"
+                        mainMenu?.findItem(R.id.action_start)?.icon = ContextCompat.getDrawable(this, android.R.drawable.ic_media_play)
+
+                    } else {
+                        timerService?.start(10) // Start with 10 seconds
+                        mainMenu?.findItem(R.id.action_start)?.title = "Pause"
+                        mainMenu?.findItem(R.id.action_start)?.icon = ContextCompat.getDrawable(this, android.R.drawable.ic_media_pause)
+
+                    }
+                }
+                true
+            }
+            R.id.action_stop -> {
+                if (isBound) {
+                    timerService?.stop()
+                    timerTextView.text = "Timer stopped"
+                    mainMenu?.findItem(R.id.action_start)?.title = "Start"
+                    mainMenu?.findItem(R.id.action_start)?.icon = ContextCompat.getDrawable(this, android.R.drawable.ic_media_play)
+
+                }
+                true
+            }
+            else -> return false
+        }
+        return true
+    }
+
+
 
     private fun updateButtonStates() {
         if (isBound) {
