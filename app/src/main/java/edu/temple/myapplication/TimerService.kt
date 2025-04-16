@@ -32,17 +32,10 @@ class TimerService : Service() {
 
         fun start(startValue: Int) {
             val prefs = getSharedPreferences("TimerPrefs", MODE_PRIVATE)
-            val wasPaused = prefs.getBoolean("wasPaused", false)
+            val savedTime = prefs.getLong("remainingTime", -1L)
+            val timeToUse = if (savedTime>0) savedTime else startValue * 1000L
 
-            val startTime = if (wasPaused && startValue == 0) {
-                prefs.getLong("remainingTime", 100_000L)
-            } else {
-                startValue * 1000L
-            }
-
-            prefs.edit().clear().apply()
-
-            startTimer(startTime)
+            startTimer(timeToUse)
         }
 
         fun pause() {
@@ -67,7 +60,12 @@ class TimerService : Service() {
 
         timerThread = TimerThread(remainingTime / 1000)
         timerThread?.start()
+
+        // Clear any "paused" flags only AFTER thread has started
+        val prefs = getSharedPreferences("TimerPrefs", MODE_PRIVATE)
+        prefs.edit().remove("wasPaused").apply()
     }
+
 
     private fun pauseTimer() {
         paused = true
@@ -84,12 +82,9 @@ class TimerService : Service() {
     private fun stopTimer() {
         paused = false
         isRunning = false
-        remainingTime = 0
         timerThread?.interrupt()
         timerThread = null
 
-        val prefs = getSharedPreferences("TimerPrefs", MODE_PRIVATE)
-        prefs.edit().clear().apply()
     }
 
     inner class TimerThread(private val startSeconds: Long) : Thread() {
@@ -97,6 +92,11 @@ class TimerService : Service() {
             try {
                 for (i in startSeconds downTo 1) {
                     remainingTime = i * 1000L
+                    val prefs = getSharedPreferences("TimerPrefs", MODE_PRIVATE)
+                    prefs.edit()
+                        .putLong("remainingTime", remainingTime)
+                        .putBoolean("wasPaused", paused) // optional
+                        .apply()
                     timerHandler?.sendEmptyMessage(i.toInt())
 
                     sleep(1000)
