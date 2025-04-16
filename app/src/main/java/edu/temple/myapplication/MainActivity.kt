@@ -62,8 +62,11 @@ class MainActivity : AppCompatActivity() {
                 if (timerService?.isRunning == true) {
                     timerService?.pause()
                     startButton.text = "Resume"
-                } else {
-                    timerService?.start(10) // Start with 10 seconds
+                } else if (timerService?.paused == true){
+                    timerService?.start(0)
+                    startButton.text = "Pause"
+                }else{
+                    timerService?.start(100) // Start with 10 seconds
                     startButton.text = "Pause"
                 }
             }
